@@ -5,8 +5,8 @@
 
 import GlassCard from './GlassCard';
 
-// Import loading GIF - adjust import path once file is added to assets/branding/
-// Place GIF file at: apps/frontend/src/assets/branding/campusconnect.gif
+// Import loading GIF - adjust import path once file is added to src/assets/branding/
+// Place GIF file at: src/assets/branding/campusconnect.gif
 // Then uncomment the line below:
 // import loadingGif from '../../assets/branding/campusconnect.gif';
 

@@ -7,8 +7,8 @@ import { Link } from 'react-router-dom';
 import Icon from './Icon';
 import { GraduationCap } from './icons';
 
-// Import logo - adjust import path once file is added to assets/branding/
-// Place logo file at: apps/frontend/src/assets/branding/campusconnect-logo.png
+// Import logo - adjust import path once file is added to src/assets/branding/
+// Place logo file at: src/assets/branding/campusconnect-logo.png
 // Then uncomment the line below:
 // import logoImage from '../../assets/branding/campusconnect-logo.png';
 

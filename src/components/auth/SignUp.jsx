@@ -77,13 +77,9 @@ function SignUp({ onSwitchToLogin }) {
         navigate('/dashboard', { replace: true });
       }, 1500);
     } else {
-      // Handle Firebase errors
-      if (result.code === 'auth/email-already-in-use') {
-        setError('This email is already registered. Please log in instead.');
-      } else if (result.code === 'auth/invalid-email') {
-        setError('Invalid email address');
-      } else if (result.code === 'auth/weak-password') {
-        setError('Password is too weak. Use at least 6 characters.');
+      // Handle backend signup errors
+      if (result.code === 'backend/register-failed') {
+        setError(result.error || 'Failed to create account. Please try again.');
       } else {
         setError(result.error || 'Failed to create account. Please try again.');
       }

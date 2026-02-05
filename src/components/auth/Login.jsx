@@ -43,17 +43,9 @@ function Login({ onSwitchToSignup }) {
       setPassword('');
       navigate('/dashboard', { replace: true });
     } else {
-      // Handle Firebase errors
-      if (result.code === 'auth/user-not-found') {
-        setError('No account found with this email. Please sign up first.');
-      } else if (result.code === 'auth/wrong-password') {
-        setError('Incorrect password. Please try again.');
-      } else if (result.code === 'auth/invalid-email') {
-        setError('Invalid email address');
-      } else if (result.code === 'auth/too-many-requests') {
-        setError('Too many failed attempts. Please try again later.');
-      } else if (result.code === 'auth/invalid-credential') {
-        setError('Invalid email or password. Please check your credentials.');
+      // Handle backend auth errors
+      if (result.code === 'backend/login-failed') {
+        setError(result.error || 'Invalid email or password. Please try again.');
       } else {
         setError(result.error || 'Failed to log in. Please try again.');
       }

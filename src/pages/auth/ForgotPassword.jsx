@@ -11,7 +11,7 @@ function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [status, setStatus] = useState(null);
 
-  // Submit the reset request to Firebase
+  // Submit the reset request to backend API
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {

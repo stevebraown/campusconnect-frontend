@@ -51,7 +51,7 @@ function APITester() {
             Auth API
           </h3>
           <Button
-            onClick={() => testEndpoint(authAPI.getStatus, setAuthResult, 'auth')}
+            onClick={() => testEndpoint(authAPI.getMe, setAuthResult, 'auth')}
             disabled={loading === 'auth'}
             fullWidth
           >
@@ -98,7 +98,7 @@ function APITester() {
         <p className="text-sm text-white/80 flex items-start gap-2">
           <Icon icon={Lightbulb} size={18} className="text-[var(--accent)] flex-shrink-0 mt-0.5" decorative />
           <span><strong>Tip:</strong> Test backend API endpoints to verify connectivity and response formats. 
-          Authentication endpoints require valid Firebase ID tokens, while protected routes need a valid JWT.</span>
+          Protected routes require a valid JWT stored in localStorage.</span>
         </p>
       </GlassCard>
     </GlassCard>
