@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useChat } from '../../context/ChatContext';
 import { chatAPI } from '../../services/api';
-import { initializeSocket, registerUser, onConversationMessage, offConversationMessage } from '../../services/socket';
+import { initializeSocket, registerUser } from '../../services/socket';
 import ConversationList from './ConversationList';
 import MessageView from './MessageView';
 import NewChatModal from './NewChatModal';
@@ -13,34 +14,10 @@ import { Plus, MessageCircle } from '../ui/icons';
 
 function ChatPage() {
   const { currentUser } = useAuth();
+  const { conversations, loading, error, loadConversations, markAsRead, updateConversation } = useChat();
   const [searchParams] = useSearchParams();
-  const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [showNewChat, setShowNewChat] = useState(false);
-
-  const loadConversations = useCallback(async () => {
-    if (!currentUser) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await chatAPI.getConversations({ limit: 50 });
-      if (res.success && res.data?.conversations) {
-        setConversations(res.data.conversations);
-      } else {
-        setError(res.error?.message || 'Failed to load conversations');
-      }
-    } catch (err) {
-      setError(err?.message || 'Failed to load conversations');
-    } finally {
-      setLoading(false);
-    }
-  }, [currentUser]);
-
-  useEffect(() => {
-    loadConversations();
-  }, [loadConversations]);
 
   // Resolve ?userId= or ?communityId= or ?conversationId= from URL
   useEffect(() => {
@@ -57,15 +34,7 @@ function ChatPage() {
           if (res.success && res.data?.conversation) {
             const conv = res.data.conversation;
             setSelectedConversation(conv);
-            setConversations((prev) => {
-              const idx = prev.findIndex((c) => c.id === conv.id);
-              if (idx >= 0) {
-                const next = [...prev];
-                next[idx] = conv;
-                return next;
-              }
-              return [conv, ...prev];
-            });
+            updateConversation(conv);
           }
         });
       }
@@ -77,11 +46,7 @@ function ChatPage() {
         if (res.success && res.data?.conversation) {
           const conv = res.data.conversation;
           setSelectedConversation(conv);
-          setConversations((prev) => {
-            const idx = prev.findIndex((c) => c.id === conv.id);
-            if (idx >= 0) return prev;
-            return [conv, ...prev];
-          });
+          updateConversation(conv);
         }
       });
       return;
@@ -92,25 +57,11 @@ function ChatPage() {
         if (res.success && res.data?.conversation) {
           const conv = res.data.conversation;
           setSelectedConversation(conv);
-          setConversations((prev) => {
-            const idx = prev.findIndex((c) => c.id === conv.id);
-            if (idx >= 0) return prev;
-            return [conv, ...prev];
-          });
+          updateConversation(conv);
         }
       });
     }
   }, [searchParams.get('userId'), searchParams.get('communityId'), searchParams.get('conversationId'), currentUser?.uid]);
-
-  // Subscribe to new messages and refresh conversation list for any incoming message
-  useEffect(() => {
-    if (!currentUser?.uid) return;
-    const handleConversationMessage = () => {
-      loadConversations();
-    };
-    onConversationMessage(handleConversationMessage);
-    return () => offConversationMessage(handleConversationMessage);
-  }, [currentUser?.uid, loadConversations]);
 
   // Initialize socket when user is logged in
   useEffect(() => {
@@ -128,15 +79,7 @@ function ChatPage() {
   }, [currentUser?.uid, currentUser?.email, currentUser?.displayName]);
 
   const handleConversationCreated = (conv) => {
-    setConversations((prev) => {
-      const idx = prev.findIndex((c) => c.id === conv.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = conv;
-        return next;
-      }
-      return [conv, ...prev];
-    });
+    updateConversation(conv);
     setSelectedConversation(conv);
   };
 
@@ -183,6 +126,7 @@ function ChatPage() {
           <MessageView
             conversation={selectedConversation}
             currentUser={currentUser}
+            onMarkAsRead={markAsRead}
           />
         </div>
       </div>

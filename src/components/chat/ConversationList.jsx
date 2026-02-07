@@ -54,7 +54,9 @@ function ConversationList({ conversations, loading, error, selectedId, onSelect,
             No conversations yet. Start a new chat!
           </div>
         )}
-        {conversations.map((conv) => (
+        {conversations.map((conv) => {
+          const unread = (conv.unreadCount ?? 0) > 0;
+          return (
           <button
             key={conv.id}
             onClick={() => onSelect(conv)}
@@ -64,9 +66,14 @@ function ConversationList({ conversations, loading, error, selectedId, onSelect,
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <span className="font-semibold text-white truncate">
+                <span className={`truncate ${unread ? 'font-bold text-white' : 'font-semibold text-white'}`}>
                   {conv.name || (conv.type === 'community' ? 'Community' : 'Chat')}
                 </span>
+                {unread && (
+                  <span className="shrink-0 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-[var(--accent)] text-white text-xs font-bold flex items-center justify-center">
+                    {conv.unreadCount > 99 ? '99+' : conv.unreadCount}
+                  </span>
+                )}
                 {conv.type === 'community' && (
                   <Icon icon={Users} size={14} className="text-white/50 shrink-0" decorative />
                 )}
@@ -79,7 +86,8 @@ function ConversationList({ conversations, loading, error, selectedId, onSelect,
               </p>
             </div>
           </button>
-        ))}
+          );
+        })}
       </div>
     </GlassCard>
   );

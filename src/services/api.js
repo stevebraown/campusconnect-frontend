@@ -398,6 +398,7 @@ export const chatAPI = {
   },
   sendMessage: (conversationId, content) =>
     apiPost(`/api/chat/conversations/${conversationId}/messages`, { content }),
+  markRead: (conversationId) => apiPost(`/api/chat/conversations/${conversationId}/read`, {}),
   getByCommunity: (communityId) => apiGet(`/api/chat/conversations/by-community/${communityId}`),
   getByUser: (userId) => apiGet(`/api/chat/conversations/by-user/${userId}`),
 };

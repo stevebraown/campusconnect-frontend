@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useChatOptional } from '../context/ChatContext';
 import Icon from '../components/ui/Icon';
 import {
   Home,
@@ -25,6 +26,8 @@ import {
 
 function SideMenu({ open, onClose, isAdmin = false }) {
   const { currentUser, logout, isAdmin: authIsAdmin } = useAuth();
+  const chatContext = useChatOptional();
+  const totalUnreadChats = chatContext?.totalUnreadChats ?? 0;
   const showAdmin = isAdmin || authIsAdmin;
   const location = useLocation();
 
@@ -114,6 +117,8 @@ function SideMenu({ open, onClose, isAdmin = false }) {
         <nav className="scrollbar-future flex flex-col gap-1 overflow-y-auto px-3 py-4 text-sm">
           {items.map((item) => {
             const active = location.pathname === item.to;
+            const isChat = item.to === '/chat';
+            const showBadge = isChat && totalUnreadChats > 0;
             return (
               <Link
                 key={item.to}
@@ -125,12 +130,22 @@ function SideMenu({ open, onClose, isAdmin = false }) {
                     : 'text-white/70 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                <Icon 
-                  icon={item.icon} 
-                  size={20} 
-                  className={active ? 'text-[var(--accent)]' : ''}
-                  decorative 
-                />
+                <span className="relative">
+                  <Icon 
+                    icon={item.icon} 
+                    size={20} 
+                    className={active ? 'text-[var(--accent)]' : ''}
+                    decorative 
+                  />
+                  {showBadge && (
+                    <span
+                      className="absolute -top-1.5 -right-1.5 min-w-[1.125rem] h-[1.125rem] px-1 rounded-full bg-[var(--accent)] text-white text-[10px] font-bold flex items-center justify-center"
+                      aria-label={`${totalUnreadChats} unread conversations`}
+                    >
+                      {totalUnreadChats > 99 ? '99+' : totalUnreadChats}
+                    </span>
+                  )}
+                </span>
                 <span className="font-semibold">{item.label}</span>
               </Link>
             );

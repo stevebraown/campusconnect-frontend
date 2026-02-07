@@ -20,7 +20,7 @@ import Skeleton from '../ui/Skeleton';
 import Icon from '../ui/Icon';
 import { Send, MessageCircle } from '../ui/icons';
 
-function MessageView({ conversation, currentUser }) {
+function MessageView({ conversation, currentUser, onMarkAsRead }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -36,6 +36,13 @@ function MessageView({ conversation, currentUser }) {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Mark conversation as read when viewing
+  useEffect(() => {
+    if (conversation?.id && onMarkAsRead) {
+      onMarkAsRead(conversation.id);
+    }
+  }, [conversation?.id, onMarkAsRead]);
 
   // Load messages
   useEffect(() => {
