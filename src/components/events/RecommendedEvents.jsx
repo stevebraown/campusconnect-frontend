@@ -1,7 +1,8 @@
 // Recommended events based on profile interests
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { eventsAPI } from '../../services/api';
+import { onEventCreated, offEventCreated, onEventUpdated, offEventUpdated } from '../../services/socket';
 import GlassCard from '../ui/GlassCard';
 import Skeleton from '../ui/Skeleton';
 import Icon from '../ui/Icon';
@@ -34,7 +35,7 @@ function RecommendedEvents() {
   const [error, setError] = useState(null);
   const [rsvping, setRsvping] = useState({});
 
-  const loadRecommended = async () => {
+  const loadRecommended = useCallback(async () => {
     if (!currentUser) return;
     try {
       setLoading(true);
@@ -52,11 +53,23 @@ function RecommendedEvents() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
   useEffect(() => {
-    loadRecommended();
-  }, [currentUser]);
+    if (currentUser) loadRecommended();
+  }, [currentUser, loadRecommended]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const handleEventCreated = () => loadRecommended();
+    const handleEventUpdated = () => loadRecommended();
+    onEventCreated(handleEventCreated);
+    onEventUpdated(handleEventUpdated);
+    return () => {
+      offEventCreated(handleEventCreated);
+      offEventUpdated(handleEventUpdated);
+    };
+  }, [currentUser, loadRecommended]);
 
   const handleRSVP = async (eventId) => {
     if (!currentUser) return;

@@ -1,7 +1,8 @@
 // List of events the user has RSVP'd to
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { eventsAPI } from '../../services/api';
+import { onEventCreated, offEventCreated, onEventUpdated, offEventUpdated } from '../../services/socket';
 import GlassCard from '../ui/GlassCard';
 import Skeleton from '../ui/Skeleton';
 import Button from '../ui/Button';
@@ -34,7 +35,7 @@ function MyEvents() {
   const [error, setError] = useState(null);
   const [withdrawing, setWithdrawing] = useState({});
 
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     if (!currentUser) return;
     try {
       setLoading(true);
@@ -51,11 +52,23 @@ function MyEvents() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
   useEffect(() => {
-    loadEvents();
-  }, [currentUser]);
+    if (currentUser) loadEvents();
+  }, [currentUser, loadEvents]);
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const handleEventCreated = () => loadEvents();
+    const handleEventUpdated = () => loadEvents();
+    onEventCreated(handleEventCreated);
+    onEventUpdated(handleEventUpdated);
+    return () => {
+      offEventCreated(handleEventCreated);
+      offEventUpdated(handleEventUpdated);
+    };
+  }, [currentUser, loadEvents]);
 
   const handleWithdraw = async (eventId) => {
     if (!currentUser) return;

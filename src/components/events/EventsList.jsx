@@ -1,7 +1,8 @@
 // List of approved events with RSVP actions
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { eventsAPI } from '../../services/api';
+import { onEventCreated, offEventCreated, onEventUpdated, offEventUpdated } from '../../services/socket';
 import GlassCard from '../ui/GlassCard';
 import Skeleton from '../ui/Skeleton';
 import Button from '../ui/Button';
@@ -34,7 +35,7 @@ function EventsList() {
   const [error, setError] = useState(null);
   const [rsvping, setRsvping] = useState({});
 
-  const loadEvents = async () => {
+  const loadEvents = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -50,11 +51,22 @@ function EventsList() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadEvents();
-  }, []);
+  }, [loadEvents]);
+
+  useEffect(() => {
+    const handleEventCreated = () => loadEvents();
+    const handleEventUpdated = () => loadEvents();
+    onEventCreated(handleEventCreated);
+    onEventUpdated(handleEventUpdated);
+    return () => {
+      offEventCreated(handleEventCreated);
+      offEventUpdated(handleEventUpdated);
+    };
+  }, [loadEvents]);
 
   const handleRSVP = async (eventId) => {
     if (!currentUser) return;

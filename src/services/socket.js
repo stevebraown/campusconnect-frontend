@@ -295,6 +295,46 @@ export const offConnectionAccepted = (callback) => {
   }
 };
 
+/**
+ * Listen for event created
+ * @param {Function} callback
+ */
+export const onEventCreated = (callback) => {
+  if (socket) {
+    socket.on('event:created', callback);
+  }
+};
+
+/**
+ * Remove event created listener
+ * @param {Function} callback
+ */
+export const offEventCreated = (callback) => {
+  if (socket) {
+    socket.off('event:created', callback);
+  }
+};
+
+/**
+ * Listen for event updated
+ * @param {Function} callback
+ */
+export const onEventUpdated = (callback) => {
+  if (socket) {
+    socket.on('event:updated', callback);
+  }
+};
+
+/**
+ * Remove event updated listener
+ * @param {Function} callback
+ */
+export const offEventUpdated = (callback) => {
+  if (socket) {
+    socket.off('event:updated', callback);
+  }
+};
+
 export default {
   initializeSocket,
   getSocket,
@@ -315,4 +355,8 @@ export default {
   offConnectionRequestReceived,
   onConnectionAccepted,
   offConnectionAccepted,
+  onEventCreated,
+  offEventCreated,
+  onEventUpdated,
+  offEventUpdated,
 };

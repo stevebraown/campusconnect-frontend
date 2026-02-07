@@ -1,7 +1,7 @@
 // Main dashboard view for signed-in users
 import { useState, useEffect, useContext, useCallback } from 'react';
 import StatsCards from './StatsCards';
-import { onConnectionRequestReceived, offConnectionRequestReceived, onConnectionAccepted, offConnectionAccepted } from '../../services/socket';
+import { onConnectionRequestReceived, offConnectionRequestReceived, onConnectionAccepted, offConnectionAccepted, onEventCreated, offEventCreated, onEventUpdated, offEventUpdated } from '../../services/socket';
 import ActivityFeed from './ActivityFeed';
 import QuickActions from './QuickActions';
 import MatchesSummary from './MatchesSummary';
@@ -11,7 +11,7 @@ import NearbyMatchesPanel from '../NearbyMatchesPanel';
 import AuthContext from '../../context/AuthContext';
 import GlassCard from '../ui/GlassCard';
 import Skeleton from '../ui/Skeleton';
-import { userAPI, matchAPI, connectionsAPI } from '../../services/api';
+import { userAPI, matchAPI, connectionsAPI, eventsAPI } from '../../services/api';
 
 function Dashboard() {
   const { currentUser } = useContext(AuthContext);
@@ -72,6 +72,10 @@ function Dashboard() {
         if (connectionsRes.success === false) throw new Error(connectionsRes.error?.message || 'Connections load failed');
         const connections = connectionsRes.data?.connections || [];
 
+        // Fetch my events (RSVP'd) for eventsAttending count
+        const myEventsRes = await eventsAPI.getMyEvents({ limit: 100 });
+        const myEvents = myEventsRes.success && myEventsRes.data?.events ? myEventsRes.data.events : [];
+
         // Calculate profile completion
         const profileFields = ['name', 'major', 'year', 'interests', 'bio'];
         const completedFields = profileFields.filter(field => userProfile[field]).length;
@@ -113,7 +117,7 @@ function Dashboard() {
             profileCompletion,
             activeMatches: matches.length,
             pendingConnections: pendingRequests.length,
-            eventsAttending: 0, // Will be added when events feature is implemented
+            eventsAttending: myEvents.length,
           },
           recentActivity,
           topMatches: matches.slice(0, 3),
@@ -133,24 +137,25 @@ function Dashboard() {
     }
   }, [currentUser, fetchDashboardData]);
 
-  // Real-time: refetch dashboard when connection events arrive
+  // Real-time: refetch dashboard when connection or event events arrive
   useEffect(() => {
     if (!currentUser) return;
 
-    const handleRequestReceived = () => {
-      fetchDashboardData();
-    };
-
-    const handleAccepted = () => {
-      fetchDashboardData();
-    };
+    const handleRequestReceived = () => fetchDashboardData();
+    const handleAccepted = () => fetchDashboardData();
+    const handleEventCreated = () => fetchDashboardData();
+    const handleEventUpdated = () => fetchDashboardData();
 
     onConnectionRequestReceived(handleRequestReceived);
     onConnectionAccepted(handleAccepted);
+    onEventCreated(handleEventCreated);
+    onEventUpdated(handleEventUpdated);
 
     return () => {
       offConnectionRequestReceived(handleRequestReceived);
       offConnectionAccepted(handleAccepted);
+      offEventCreated(handleEventCreated);
+      offEventUpdated(handleEventUpdated);
     };
   }, [currentUser, fetchDashboardData]);
 
