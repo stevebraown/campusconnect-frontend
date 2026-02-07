@@ -22,11 +22,12 @@ function ProximityListener() {
     if (!currentUser) return undefined;
 
     const handler = (payload) => {
-      const { users = [], distanceMeters } = payload || {};
+      const { users = [], distanceMeters, profiles = {} } = payload || {};
       if (!users.includes(currentUser.uid)) return;
-      const otherId = users.find((u) => u !== currentUser.uid) || 'A match';
+      const otherId = users.find((u) => u !== currentUser.uid);
+      const otherDisplayName = otherId ? (profiles[otherId]?.displayName || 'Someone') : 'Someone';
       const distance = distanceMeters ? Math.round(distanceMeters) : 0;
-      const msg = `${otherId} is nearby (~${distance}m)`;
+      const msg = `${otherDisplayName} is nearby (within ${distance}m)`;
       addToast(msg, { type: 'info', duration: 6000 });
       notifyBrowser('Nearby match', msg);
     };
