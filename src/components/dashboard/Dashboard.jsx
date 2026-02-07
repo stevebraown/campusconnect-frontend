@@ -1,6 +1,7 @@
 // Main dashboard view for signed-in users
-import { useState, useEffect, useContext } from 'react';
+import { useState, useEffect, useContext, useCallback } from 'react';
 import StatsCards from './StatsCards';
+import { onConnectionRequestReceived, offConnectionRequestReceived, onConnectionAccepted, offConnectionAccepted } from '../../services/socket';
 import ActivityFeed from './ActivityFeed';
 import QuickActions from './QuickActions';
 import MatchesSummary from './MatchesSummary';
@@ -28,9 +29,8 @@ function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
+  const fetchDashboardData = useCallback(async () => {
+    try {
         setLoading(true);
         setError(null);
 
@@ -119,18 +119,40 @@ function Dashboard() {
           topMatches: matches.slice(0, 3),
           recentConnections: connections.slice(0, 3),
         });
-      } catch (err) {
-        console.error('Error fetching dashboard data:', err);
-        setError(err?.error?.message || err?.message || 'Failed to load dashboard data');
-      } finally {
-        setLoading(false);
-      }
-    };
+    } catch (err) {
+      console.error('Error fetching dashboard data:', err);
+      setError(err?.error?.message || err?.message || 'Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentUser]);
 
+  useEffect(() => {
     if (currentUser) {
       fetchDashboardData();
     }
-  }, [currentUser]);
+  }, [currentUser, fetchDashboardData]);
+
+  // Real-time: refetch dashboard when connection events arrive
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const handleRequestReceived = () => {
+      fetchDashboardData();
+    };
+
+    const handleAccepted = () => {
+      fetchDashboardData();
+    };
+
+    onConnectionRequestReceived(handleRequestReceived);
+    onConnectionAccepted(handleAccepted);
+
+    return () => {
+      offConnectionRequestReceived(handleRequestReceived);
+      offConnectionAccepted(handleAccepted);
+    };
+  }, [currentUser, fetchDashboardData]);
 
   if (loading) {
     return (

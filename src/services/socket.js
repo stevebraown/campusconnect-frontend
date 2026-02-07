@@ -255,6 +255,45 @@ export const offConversationMessage = (callback) => {
   }
 };
 
+/**
+ * Listen for connection request received
+ * @param {Function} callback
+ */
+export const onConnectionRequestReceived = (callback) => {
+  if (socket) {
+    socket.on('connection:request-received', callback);
+  }
+};
+
+/**
+ * Remove connection request received listener
+ * @param {Function} callback
+ */
+export const offConnectionRequestReceived = (callback) => {
+  if (socket) {
+    socket.off('connection:request-received', callback);
+  }
+};
+
+/**
+ * Listen for connection accepted
+ * @param {Function} callback
+ */
+export const onConnectionAccepted = (callback) => {
+  if (socket) {
+    socket.on('connection:accepted', callback);
+  }
+};
+
+/**
+ * Remove connection accepted listener
+ * @param {Function} callback
+ */
+export const offConnectionAccepted = (callback) => {
+  if (socket) {
+    socket.off('connection:accepted', callback);
+  }
+};
 
 export default {
   initializeSocket,
@@ -272,4 +311,8 @@ export default {
   updateLocation,
   onProximityMatch,
   offProximityMatch,
+  onConnectionRequestReceived,
+  offConnectionRequestReceived,
+  onConnectionAccepted,
+  offConnectionAccepted,
 };

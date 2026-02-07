@@ -1,11 +1,12 @@
 // List of incoming connection requests
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import {
   getConnectionRequests,
   acceptConnection,
   rejectConnection
 } from '../../services/connectionService';
+import { onConnectionRequestReceived, offConnectionRequestReceived, onConnectionAccepted, offConnectionAccepted } from '../../services/socket';
 import GlassCard from '../ui/GlassCard';
 import EmptyState from '../ui/EmptyState';
 import Skeleton from '../ui/Skeleton';
@@ -19,7 +20,8 @@ function ConnectionRequests() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
 
-  const loadRequests = async () => {
+  const loadRequests = useCallback(async () => {
+    if (!currentUser) return;
     setLoading(true);
     const result = await getConnectionRequests(currentUser.uid);
 
@@ -28,13 +30,34 @@ function ConnectionRequests() {
     }
 
     setLoading(false);
-  };
+  }, [currentUser]);
 
   useEffect(() => {
     if (currentUser) {
       loadRequests();
     }
-  }, [currentUser]);
+  }, [currentUser, loadRequests]);
+
+  // Real-time: subscribe to connection events
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const handleRequestReceived = () => {
+      loadRequests();
+    };
+
+    const handleAccepted = () => {
+      loadRequests();
+    };
+
+    onConnectionRequestReceived(handleRequestReceived);
+    onConnectionAccepted(handleAccepted);
+
+    return () => {
+      offConnectionRequestReceived(handleRequestReceived);
+      offConnectionAccepted(handleAccepted);
+    };
+  }, [currentUser, loadRequests]);
 
   const handleAccept = async (connectionId) => {
     setProcessingId(connectionId);
