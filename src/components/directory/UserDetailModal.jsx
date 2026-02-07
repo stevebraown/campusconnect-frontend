@@ -2,13 +2,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { 
-  sendConnectionRequest, 
+import {
+  sendConnectionRequest,
   getConnectionStatus,
   acceptConnection,
   rejectConnection,
-  getThreadId,
-  CONNECTION_STATUS 
+  CONNECTION_STATUS
 } from '../../services/connectionService';
 import GlassCard from '../ui/GlassCard';
 import Button from '../ui/Button';
@@ -35,18 +34,10 @@ function UserDetailModal({ profile, onClose }) {
   const navigate = useNavigate();
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [connectionData, setConnectionData] = useState(null);
-  const [threadId, setThreadId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
   const [message, setMessage] = useState('');
-
-  useEffect(() => {
-    if (profile && currentUser) {
-      checkConnectionStatus();
-      loadCurrentUserProfile();
-    }
-  }, [profile, currentUser]);
 
   const loadCurrentUserProfile = async () => {
     const result = await getProfileById(currentUser.uid, token);
@@ -60,16 +51,17 @@ function UserDetailModal({ profile, onClose }) {
     if (result.success) {
       setConnectionStatus(result.status);
       setConnectionData(result.connection);
-      
-      // If connected, get thread ID
-      if (result.status === CONNECTION_STATUS.ACCEPTED) {
-        const threadResult = await getThreadId(currentUser.uid, profile.userId);
-        if (threadResult.success) {
-          setThreadId(threadResult.threadId);
-        }
-      }
+
+      // Connection accepted - Message button will use userId for chat
     }
   };
+
+  useEffect(() => {
+    if (profile && currentUser) {
+      checkConnectionStatus();
+      loadCurrentUserProfile();
+    }
+  }, [profile, currentUser]);
 
   const handleConnect = async () => {
     if (!currentUserProfile) {
@@ -101,12 +93,12 @@ function UserDetailModal({ profile, onClose }) {
 
   const handleAccept = async () => {
     if (!connectionData?.id) return;
-    
+
     setProcessing(true);
     setMessage('');
-    
+
     const result = await acceptConnection(connectionData.id);
-    
+
     if (result.success) {
       setConnectionStatus(CONNECTION_STATUS.ACCEPTED);
       setMessage('success');
@@ -115,18 +107,18 @@ function UserDetailModal({ profile, onClose }) {
     } else {
       setMessage(result.error || 'Failed to accept connection');
     }
-    
+
     setProcessing(false);
   };
 
   const handleReject = async () => {
     if (!connectionData?.id) return;
-    
+
     setProcessing(true);
     setMessage('');
-    
+
     const result = await rejectConnection(connectionData.id);
-    
+
     if (result.success) {
       setConnectionStatus(null);
       setConnectionData(null);
@@ -135,16 +127,14 @@ function UserDetailModal({ profile, onClose }) {
     } else {
       setMessage(result.error || 'Failed to reject connection');
     }
-    
+
     setProcessing(false);
   };
 
   const handleMessage = () => {
-    if (threadId) {
-      // Navigate to chat with thread ID
-      navigate(`/chat?thread=${threadId}`);
-      onClose();
-    }
+    // Navigate to chat with conversation (by-user will get or create)
+    navigate(`/chat?userId=${profile.userId}`);
+    onClose();
   };
 
   const getButtonProps = () => {
@@ -195,11 +185,11 @@ function UserDetailModal({ profile, onClose }) {
   const canConnect = !connectionStatus;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center p-4 z-50"
       onClick={onClose}
     >
-      <GlassCard 
+      <GlassCard
         className="max-w-2xl w-full max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
@@ -211,7 +201,7 @@ function UserDetailModal({ profile, onClose }) {
               <div className="w-20 h-20 bg-[var(--accent)]/30 rounded-full flex items-center justify-center text-4xl font-bold text-white border-2 border-white/20">
                 {profile.name.charAt(0).toUpperCase()}
               </div>
-              
+
               {/* Name & Major */}
               <div>
                 <h2 className="text-2xl font-bold mb-1 text-white">{profile.name}</h2>
@@ -237,11 +227,10 @@ function UserDetailModal({ profile, onClose }) {
         <div className="p-6">
           {/* Success/Error Message */}
           {message && (
-            <GlassCard className={`mb-4 p-3 ${
-              message === 'success'
+            <GlassCard className={`mb-4 p-3 ${message === 'success'
                 ? 'bg-emerald-500/15 border-emerald-500/30'
                 : 'bg-red-500/15 border-red-500/30'
-            }`}>
+              }`}>
               <div className="flex items-center gap-2 text-sm">
                 {message === 'success' ? (
                   <>
@@ -333,16 +322,16 @@ function UserDetailModal({ profile, onClose }) {
               </>
             ) : (
               <>
-                <Button 
+                <Button
                   onClick={handleConnect}
                   disabled={!canConnect || loading || processing}
                   fullWidth
                   {...getButtonProps()}
                 />
-                <Button 
+                <Button
                   variant="ghost"
                   fullWidth
-                  disabled={!isConnected || !threadId}
+                  disabled={!isConnected}
                   onClick={handleMessage}
                   icon={<Icon icon={MessageCircle} size={16} decorative />}
                 >

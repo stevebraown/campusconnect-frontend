@@ -5,11 +5,13 @@ import { groupsAPI } from '../../services/api';
 import GlassCard from '../ui/GlassCard';
 import Skeleton from '../ui/Skeleton';
 import Button from '../ui/Button';
+import { useNavigate } from 'react-router-dom';
 import Icon from '../ui/Icon';
-import { Users, RefreshCw, AlertCircle, UserMinus } from '../ui/icons';
+import { Users, RefreshCw, AlertCircle, UserMinus, MessageCircle } from '../ui/icons';
 
 function MyCommunities() {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -154,15 +156,25 @@ function MyCommunities() {
                     Created by {group.createdByRole === 'admin' ? 'admin' : 'student'}
                   </p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  icon={<Icon icon={UserMinus} size={14} decorative />}
-                  onClick={() => handleLeave(group.id)}
-                  disabled={leaving[group.id]}
-                >
-                  {leaving[group.id] ? '...' : 'Leave'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<Icon icon={MessageCircle} size={14} decorative />}
+                    onClick={() => navigate(`/chat?communityId=${group.id}`)}
+                  >
+                    Chat
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    icon={<Icon icon={UserMinus} size={14} decorative />}
+                    onClick={() => handleLeave(group.id)}
+                    disabled={leaving[group.id]}
+                  >
+                    {leaving[group.id] ? '...' : 'Leave'}
+                  </Button>
+                </div>
               </div>
             </div>
           ))}

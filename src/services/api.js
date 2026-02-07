@@ -200,6 +200,10 @@ export const userAPI = {
   updateProfile: (id, data) => apiPut(`/api/users/${id}`, data),
   // Update location (requires ownership, enforces geofence)
   updateLocation: (id, payload) => apiPatch(`/api/users/${id}/location`, payload),
+  // Get current user settings (notifications, privacy)
+  getSettings: () => apiGet('/api/users/me/settings'),
+  // Update current user settings (notifications, privacy)
+  updateSettings: (settings) => apiPatch('/api/users/me/settings', settings),
 };
 
 /**
@@ -373,6 +377,32 @@ export const onboardingAPI = {
 };
 
 /**
+ * Chat API calls
+ */
+export const chatAPI = {
+  getConversations: (params = {}) => {
+    const query = new URLSearchParams();
+    if (params.limit) query.append('limit', params.limit);
+    if (params.offset) query.append('offset', params.offset);
+    const queryString = query.toString();
+    return apiGet(`/api/chat/conversations${queryString ? `?${queryString}` : ''}`);
+  },
+  getConversation: (id) => apiGet(`/api/chat/conversations/${id}`),
+  createConversation: (data) => apiPost('/api/chat/conversations', data),
+  getMessages: (conversationId, params = {}) => {
+    const query = new URLSearchParams();
+    if (params.limit) query.append('limit', params.limit);
+    if (params.before) query.append('before', params.before);
+    const queryString = query.toString();
+    return apiGet(`/api/chat/conversations/${conversationId}/messages${queryString ? `?${queryString}` : ''}`);
+  },
+  sendMessage: (conversationId, content) =>
+    apiPost(`/api/chat/conversations/${conversationId}/messages`, { content }),
+  getByCommunity: (communityId) => apiGet(`/api/chat/conversations/by-community/${communityId}`),
+  getByUser: (userId) => apiGet(`/api/chat/conversations/by-user/${userId}`),
+};
+
+/**
  * Safety API calls (AI-driven content moderation)
  */
 export const safetyAPI = {
@@ -402,4 +432,5 @@ export default {
   // AI-driven onboarding and safety helpers.
   onboardingAPI,
   safetyAPI,
+  chatAPI,
 };

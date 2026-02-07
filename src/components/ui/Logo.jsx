@@ -23,12 +23,7 @@ const logoImage = null; // Will be set once logo file is added
  * @param {boolean} props.linkToHome - Whether to wrap logo in a Link to home
  * @param {string} props.className - Additional CSS classes
  */
-function Logo({ 
-  size = 'md', 
-  showText = true, 
-  linkToHome = true,
-  className = '' 
-}) {
+const LogoImage = ({ size }) => {
   const sizeClasses = {
     sm: 'h-6 w-6',
     md: 'h-8 w-8',
@@ -36,6 +31,33 @@ function Logo({
     xl: 'h-20 w-20 md:h-24 md:w-24',
   };
 
+  if (logoImage) {
+    return (
+      <img
+        src={logoImage}
+        alt="CampusConnect"
+        className={`${sizeClasses[size]} object-contain flex-shrink-0`}
+      />
+    );
+  }
+  // Fallback icon if logo file doesn't exist yet
+  const iconSize = size === 'sm' ? 20 : size === 'md' ? 24 : size === 'lg' ? 32 : 48;
+  return (
+    <Icon
+      icon={GraduationCap}
+      size={iconSize}
+      className="text-[var(--accent)] flex-shrink-0"
+      decorative
+    />
+  );
+};
+
+function Logo({
+  size = 'md',
+  showText = true,
+  linkToHome = true,
+  className = ''
+}) {
   const textSizeClasses = {
     sm: 'text-sm',
     md: 'text-base',
@@ -43,31 +65,9 @@ function Logo({
     xl: 'text-2xl md:text-3xl',
   };
 
-  const LogoImage = () => {
-    if (logoImage) {
-      return (
-        <img
-          src={logoImage}
-          alt="CampusConnect"
-          className={`${sizeClasses[size]} object-contain flex-shrink-0`}
-        />
-      );
-    }
-    // Fallback icon if logo file doesn't exist yet
-    const iconSize = size === 'sm' ? 20 : size === 'md' ? 24 : size === 'lg' ? 32 : 48;
-    return (
-      <Icon 
-        icon={GraduationCap} 
-        size={iconSize} 
-        className="text-[var(--accent)] flex-shrink-0" 
-        decorative 
-      />
-    );
-  };
-
   const logoContent = (
     <div className={`flex items-center gap-3 ${className}`}>
-      <LogoImage />
+      <LogoImage size={size} />
       {showText && (
         <span className={`font-bold tracking-tight text-white ${textSizeClasses[size]}`}>
           CampusConnect

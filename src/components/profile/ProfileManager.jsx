@@ -13,18 +13,11 @@ function ProfileManager() {
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
 
-  // Load profile when component mounts
-  useEffect(() => {
-    if (currentUser) {
-      loadProfile();
-    }
-  }, [currentUser]);
-
   const loadProfile = async () => {
     setLoading(true);
     try {
       const result = await userAPI.getProfile();
-      
+
       // userAPI.getProfile returns { success, user, profile }
       if (result.success && result.data?.profile) {
         setProfile(result.data.profile);
@@ -40,9 +33,16 @@ function ProfileManager() {
       setProfile(null);
       setIsEditing(true);
     }
-    
+
     setLoading(false);
   };
+
+  // Load profile when component mounts
+  useEffect(() => {
+    if (currentUser) {
+      loadProfile();
+    }
+  }, [currentUser]);
 
   const handleProfileComplete = (newProfile) => {
     setProfile(newProfile);

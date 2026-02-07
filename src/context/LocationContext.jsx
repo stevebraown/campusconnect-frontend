@@ -1,24 +1,61 @@
-// Provider for persisting location permission preference
-import { useEffect, useMemo, useState } from 'react';
+// Provider for location preference – profile is source of truth
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useAuth } from './AuthContext';
+import { userAPI } from '../services/api';
 import LocationContext from './LocationContextBase';
-const STORAGE_KEY = 'cc_location_enabled';
 
 export const LocationProvider = ({ children }) => {
-  // Load initial preference from local storage
-  const [locationEnabled, setLocationEnabled] = useState(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored === 'true';
-  });
+  const { currentUser } = useAuth();
+  const [locationEnabled, setLocationEnabledState] = useState(false);
+  const [locationLoading, setLocationLoading] = useState(true);
 
-  // Persist preference changes
+  // Load from profile when user is authenticated
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, locationEnabled ? 'true' : 'false');
-  }, [locationEnabled]);
+    if (!currentUser) {
+      setLocationEnabledState(false);
+      setLocationLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setLocationLoading(true);
+    userAPI
+      .getProfile()
+      .then((res) => {
+        if (!cancelled && res.success && res.data?.profile) {
+          setLocationEnabledState(res.data.profile.locationEnabled === true);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setLocationEnabledState(false);
+      })
+      .finally(() => {
+        if (!cancelled) setLocationLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [currentUser?.uid]);
 
-  // Memoize context value
+  // Update profile and local state; returns Promise for loading/error handling
+  const setLocationEnabled = useCallback(
+    async (enabled) => {
+      if (!currentUser) return;
+      setLocationEnabledState(enabled);
+      try {
+        const result = await userAPI.updateProfile(currentUser.uid, { locationEnabled: enabled });
+        if (!result.success) {
+          setLocationEnabledState(!enabled);
+          throw new Error(result.error?.message || 'Failed to update location setting');
+        }
+      } catch (err) {
+        setLocationEnabledState(!enabled);
+        throw err;
+      }
+    },
+    [currentUser?.uid]
+  );
+
   const value = useMemo(
-    () => ({ locationEnabled, setLocationEnabled }),
-    [locationEnabled]
+    () => ({ locationEnabled, setLocationEnabled, locationLoading }),
+    [locationEnabled, setLocationEnabled]
   );
 
   return <LocationContext.Provider value={value}>{children}</LocationContext.Provider>;

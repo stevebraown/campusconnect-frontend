@@ -17,7 +17,7 @@ function UserDirectory({ onUserClick }) {
   const [filteredProfiles, setFilteredProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  
+
   // Filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [filters, setFilters] = useState({
@@ -26,22 +26,13 @@ function UserDirectory({ onUserClick }) {
     interest: '',
   });
 
-  useEffect(() => {
-    loadProfiles();
-  }, []);
-
-  // Apply filters whenever profiles or filters change
-  useEffect(() => {
-    applyFilters();
-  }, [allProfiles, searchTerm, filters]);
-
   const loadProfiles = async () => {
     setLoading(true);
     setError('');
 
     try {
       const result = await userAPI.getAllUsers(50, 0);
-      
+
       // userAPI.getAllUsers returns { success, profiles, total, returned, limit, offset }
       // Backend already excludes current user, so no need to filter
       if (result.success && result.data?.profiles) {
@@ -57,6 +48,10 @@ function UserDirectory({ onUserClick }) {
 
     setLoading(false);
   };
+
+  useEffect(() => {
+    loadProfiles();
+  }, []);
 
   const applyFilters = () => {
     let filtered = [...allProfiles];
@@ -93,6 +88,11 @@ function UserDirectory({ onUserClick }) {
 
     setFilteredProfiles(filtered);
   };
+
+  // Apply filters whenever profiles or filters change
+  useEffect(() => {
+    applyFilters();
+  }, [allProfiles, searchTerm, filters]);
 
   const handleSearch = (term) => {
     setSearchTerm(term);

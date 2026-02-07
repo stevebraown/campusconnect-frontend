@@ -1,10 +1,10 @@
 // List of incoming connection requests
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { 
-  getConnectionRequests, 
-  acceptConnection, 
-  rejectConnection 
+import {
+  getConnectionRequests,
+  acceptConnection,
+  rejectConnection
 } from '../../services/connectionService';
 import GlassCard from '../ui/GlassCard';
 import EmptyState from '../ui/EmptyState';
@@ -19,48 +19,48 @@ function ConnectionRequests() {
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
 
+  const loadRequests = async () => {
+    setLoading(true);
+    const result = await getConnectionRequests(currentUser.uid);
+
+    if (result.success) {
+      setRequests(result.requests);
+    }
+
+    setLoading(false);
+  };
+
   useEffect(() => {
     if (currentUser) {
       loadRequests();
     }
   }, [currentUser]);
 
-  const loadRequests = async () => {
-    setLoading(true);
-    const result = await getConnectionRequests(currentUser.uid);
-    
-    if (result.success) {
-      setRequests(result.requests);
-    }
-    
-    setLoading(false);
-  };
-
   const handleAccept = async (connectionId) => {
     setProcessingId(connectionId);
-    
+
     const result = await acceptConnection(connectionId);
-    
+
     if (result.success) {
       // Remove from requests list
       setRequests(prev => prev.filter(req => req.id !== connectionId));
       console.log('✅ Connection accepted!');
     }
-    
+
     setProcessingId(null);
   };
 
   const handleReject = async (connectionId) => {
     setProcessingId(connectionId);
-    
+
     const result = await rejectConnection(connectionId);
-    
+
     if (result.success) {
       // Remove from requests list
       setRequests(prev => prev.filter(req => req.id !== connectionId));
       console.log('✅ Connection rejected');
     }
-    
+
     setProcessingId(null);
   };
 

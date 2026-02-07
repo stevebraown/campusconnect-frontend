@@ -5,6 +5,19 @@ import Icon from './ui/Icon';
 import { TestTube, Key, User, Handshake, Lightbulb } from './ui/icons';
 import Button from './ui/Button';
 
+const ResultDisplay = ({ title, result }) => {
+  if (!result) return null;
+
+  return (
+    <div className="mt-4 bg-white/5 rounded-lg p-4 border border-white/10">
+      <h4 className="font-semibold text-white mb-2">{title}</h4>
+      <pre className="text-xs text-white/80 overflow-x-auto bg-black/20 p-3 rounded border border-white/10">
+        {JSON.stringify(result, null, 2)}
+      </pre>
+    </div>
+  );
+};
+
 function APITester() {
   const [authResult, setAuthResult] = useState(null);
   const [userResult, setUserResult] = useState(null);
@@ -16,19 +29,6 @@ function APITester() {
     const response = await endpoint();
     setter(response);
     setLoading(null);
-  };
-
-  const ResultDisplay = ({ title, result }) => {
-    if (!result) return null;
-
-    return (
-      <div className="mt-4 bg-white/5 rounded-lg p-4 border border-white/10">
-        <h4 className="font-semibold text-white mb-2">{title}</h4>
-        <pre className="text-xs text-white/80 overflow-x-auto bg-black/20 p-3 rounded border border-white/10">
-          {JSON.stringify(result, null, 2)}
-        </pre>
-      </div>
-    );
   };
 
   return (
@@ -97,8 +97,8 @@ function APITester() {
       <GlassCard className="mt-6 border-[var(--accent)]/30">
         <p className="text-sm text-white/80 flex items-start gap-2">
           <Icon icon={Lightbulb} size={18} className="text-[var(--accent)] flex-shrink-0 mt-0.5" decorative />
-          <span><strong>Tip:</strong> Test backend API endpoints to verify connectivity and response formats. 
-          Protected routes require a valid JWT stored in localStorage.</span>
+          <span><strong>Tip:</strong> Test backend API endpoints to verify connectivity and response formats.
+            Protected routes require a valid JWT stored in localStorage.</span>
         </p>
       </GlassCard>
     </GlassCard>

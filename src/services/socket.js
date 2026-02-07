@@ -10,7 +10,7 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
 
 let socket = null;
 
-const proximityEvent = 'proximity:nearby-match';
+const proximityEvent = 'proximity:nearby-suggestion';
 
 /**
  * Initialize socket connection
@@ -23,11 +23,15 @@ export const initializeSocket = (userData) => {
     return socket;
   }
 
+  const token = localStorage.getItem('jwt') || '';
   socket = io(SOCKET_URL, {
     transports: ['websocket', 'polling'],
     reconnection: true,
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
+    auth: {
+      token,
+    },
   });
 
   // Connection events
@@ -53,6 +57,26 @@ export const initializeSocket = (userData) => {
   });
 
   return socket;
+};
+
+/**
+ * Listen for socket reconnect (for re-joining rooms)
+ * @param {Function} callback
+ */
+export const onReconnect = (callback) => {
+  if (socket) {
+    socket.on('reconnect', callback);
+  }
+};
+
+/**
+ * Remove reconnect listener
+ * @param {Function} callback
+ */
+export const offReconnect = (callback) => {
+  if (socket) {
+    socket.off('reconnect', callback);
+  }
 };
 
 /**
@@ -181,6 +205,56 @@ export const offProximityMatch = (callback) => {
     socket.off(proximityEvent, callback);
   }
 };
+
+/**
+ * Join a conversation room for real-time messages
+ * @param {string} conversationId
+ * @param {Function} callback - (result) => void, result: { ok, error?, room? }
+ */
+export const joinConversation = (conversationId, callback) => {
+  if (socket && socket.connected) {
+    socket.emit('chat:join-conversation', { conversationId }, (result) => {
+      if (typeof callback === 'function') callback(result);
+    });
+  } else if (typeof callback === 'function') {
+    callback({ ok: false, error: 'Not connected' });
+  }
+};
+
+/**
+ * Leave a conversation room
+ * @param {string} conversationId
+ */
+export const leaveConversation = (conversationId) => {
+  if (socket && socket.connected) {
+    socket.emit('chat:leave-conversation', { conversationId });
+  }
+};
+
+/**
+ * Listen for new messages in conversation (chat:new-message from room)
+ * @param {Function} callback
+ */
+export const onConversationMessage = (callback) => {
+  if (socket) {
+    socket.on('chat:new-message', callback);
+  }
+};
+
+/**
+ * Remove conversation message listener
+ * @param {Function} [callback] - If provided, removes only this callback; otherwise removes all
+ */
+export const offConversationMessage = (callback) => {
+  if (socket) {
+    if (typeof callback === 'function') {
+      socket.off('chat:new-message', callback);
+    } else {
+      socket.off('chat:new-message');
+    }
+  }
+};
+
 
 export default {
   initializeSocket,

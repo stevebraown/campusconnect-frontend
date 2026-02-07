@@ -6,10 +6,12 @@ import GlassCard from '../ui/GlassCard';
 import Skeleton from '../ui/Skeleton';
 import Button from '../ui/Button';
 import Icon from '../ui/Icon';
-import { Users, RefreshCw, AlertCircle, UserPlus, UserMinus } from '../ui/icons';
+import { useNavigate } from 'react-router-dom';
+import { Users, RefreshCw, AlertCircle, UserPlus, UserMinus, MessageCircle } from '../ui/icons';
 
 function GroupsList() {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -170,15 +172,27 @@ function GroupsList() {
                   </p>
                 </div>
                 {currentUser && (
-                  <Button
-                    variant={isMember(group) ? 'ghost' : 'primary'}
-                    size="sm"
-                    icon={<Icon icon={isMember(group) ? UserMinus : UserPlus} size={14} decorative />}
-                    onClick={() => isMember(group) ? handleLeave(group.id) : handleJoin(group.id)}
-                    disabled={joining[group.id]}
-                  >
-                    {joining[group.id] ? '...' : isMember(group) ? 'Leave' : 'Join'}
-                  </Button>
+                  <div className="flex gap-2">
+                    {isMember(group) && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={<Icon icon={MessageCircle} size={14} decorative />}
+                        onClick={() => navigate(`/chat?communityId=${group.id}`)}
+                      >
+                        Chat
+                      </Button>
+                    )}
+                    <Button
+                      variant={isMember(group) ? 'ghost' : 'primary'}
+                      size="sm"
+                      icon={<Icon icon={isMember(group) ? UserMinus : UserPlus} size={14} decorative />}
+                      onClick={() => isMember(group) ? handleLeave(group.id) : handleJoin(group.id)}
+                      disabled={joining[group.id]}
+                    >
+                      {joining[group.id] ? '...' : isMember(group) ? 'Leave' : 'Join'}
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>

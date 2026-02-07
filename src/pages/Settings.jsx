@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { userAPI } from '../services/api';
+import { useLocationPreference } from '../hooks/useLocationPreference';
 import GlassCard from '../components/ui/GlassCard';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
@@ -9,7 +10,7 @@ import { Settings as SettingsIcon, User, Bell, Shield, LogOut, MapPin } from '..
 
 function Settings() {
   const { currentUser, logout } = useAuth();
-  const [loading, setLoading] = useState(true);
+  const { locationEnabled, setLocationEnabled, locationLoading } = useLocationPreference();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -24,31 +25,27 @@ function Settings() {
     showLocation: false,
     showEmail: false,
   });
-  const [locationEnabled, setLocationEnabled] = useState(false);
+  const [settingsLoading, setSettingsLoading] = useState(true);
 
-  // Load profile data on mount
   useEffect(() => {
-    if (currentUser) {
-      loadProfile();
-    }
-  }, [currentUser]);
-
-  const loadProfile = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const result = await userAPI.getProfile();
-      if (result.success && result.data?.profile) {
-        const profile = result.data.profile;
-        setLocationEnabled(profile.locationEnabled === true);
+    const load = async () => {
+      if (!currentUser) return;
+      setSettingsLoading(true);
+      try {
+        const res = await userAPI.getSettings();
+        if (res.success && res.data?.settings) {
+          const s = res.data.settings;
+          if (s.notifications) setNotifications((prev) => ({ ...prev, ...s.notifications }));
+          if (s.privacy) setPrivacy((prev) => ({ ...prev, ...s.privacy }));
+        }
+      } catch {
+        // Use defaults on error
+      } finally {
+        setSettingsLoading(false);
       }
-    } catch (err) {
-      console.error('Error loading profile:', err);
-      setError('Failed to load profile settings');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+    load();
+  }, [currentUser?.uid]);
 
   const handleNotificationChange = (key) => {
     setNotifications(prev => ({ ...prev, [key]: !prev[key] }));
@@ -58,35 +55,38 @@ function Settings() {
     setPrivacy(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const handleLocationEnabledChange = async (enabled) => {
-    if (!currentUser) return;
-    
-    setLocationEnabled(enabled);
+  const handleLocationEnabledChange = async () => {
     setError(null);
     setSuccess(false);
-
     try {
       setSaving(true);
-      const result = await userAPI.updateProfile(currentUser.uid, { locationEnabled: enabled });
-      if (result.success) {
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
-      } else {
-        setError(result.error?.message || 'Failed to update location setting');
-        setLocationEnabled(!enabled); // Revert on error
-      }
+      await setLocationEnabled(!locationEnabled);
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      console.error('Error updating locationEnabled:', err);
-      setError(err?.error?.message || 'Failed to update location setting');
-      setLocationEnabled(!enabled); // Revert on error
+      setError(err?.message || 'Failed to update location setting');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleSave = () => {
-    // TODO: Save settings to backend
-    console.log('Saving settings:', { notifications, privacy });
+  const handleSave = async () => {
+    setError(null);
+    setSuccess(false);
+    try {
+      setSaving(true);
+      const res = await userAPI.updateSettings({ notifications, privacy });
+      if (res.success) {
+        setSuccess(true);
+        setTimeout(() => setSuccess(false), 3000);
+      } else {
+        setError(res.error?.message || 'Failed to save settings');
+      }
+    } catch (err) {
+      setError(err?.message || err?.error?.message || 'Failed to save settings');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -245,11 +245,11 @@ function Settings() {
             </div>
             <button
               type="button"
-              onClick={() => handleLocationEnabledChange(!locationEnabled)}
-              disabled={saving || loading}
+              onClick={handleLocationEnabledChange}
+              disabled={saving || locationLoading}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
                 locationEnabled ? 'bg-[var(--accent)]' : 'bg-white/20'
-              } ${saving || loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              } ${saving || locationLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
             >
               <span
                 className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -259,7 +259,7 @@ function Settings() {
             </button>
           </label>
           {success && (
-            <p className="text-xs text-green-400">Location setting saved successfully</p>
+            <p className="text-xs text-green-400">Settings saved successfully</p>
           )}
           {error && (
             <p className="text-xs text-red-400">{error}</p>
@@ -268,22 +268,27 @@ function Settings() {
       </GlassCard>
 
       {/* Actions */}
-      <div className="flex gap-4">
-        <Button
-          variant="primary"
-          onClick={handleSave}
-          className="flex-1"
-        >
-          Save Settings
-        </Button>
-        <Button
-          variant="ghost"
-          onClick={logout}
-          icon={<Icon icon={LogOut} size={18} decorative />}
-          className="flex-1"
-        >
-          Logout
-        </Button>
+      <div className="flex flex-col gap-4">
+        {success && <p className="text-sm text-green-400">Settings saved successfully</p>}
+        {error && <p className="text-sm text-red-400">{error}</p>}
+        <div className="flex gap-4">
+          <Button
+            variant="primary"
+            onClick={handleSave}
+            disabled={saving || settingsLoading}
+            className="flex-1"
+          >
+            {saving ? 'Saving…' : 'Save Settings'}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={logout}
+            icon={<Icon icon={LogOut} size={18} decorative />}
+            className="flex-1"
+          >
+            Logout
+          </Button>
+        </div>
       </div>
     </div>
   );

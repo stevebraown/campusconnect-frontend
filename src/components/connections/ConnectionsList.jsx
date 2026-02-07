@@ -28,16 +28,10 @@ function ConnectionsList({ onUserClick }) {
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (currentUser) {
-      loadConnections();
-    }
-  }, [currentUser]);
-
   const loadConnections = async () => {
     setLoading(true);
     const result = await getUserConnections(currentUser.uid);
-    
+
     if (result.success) {
       // Load full profiles for each connection
       const connectionsWithProfiles = await Promise.all(
@@ -49,12 +43,18 @@ function ConnectionsList({ onUserClick }) {
           };
         })
       );
-      
+
       setConnections(connectionsWithProfiles);
     }
-    
+
     setLoading(false);
   };
+
+  useEffect(() => {
+    if (currentUser) {
+      loadConnections();
+    }
+  }, [currentUser]);
 
   if (!currentUser) {
     return null;
@@ -117,7 +117,7 @@ function ConnectionsList({ onUserClick }) {
               if (!profile || !profile.name) return null;
 
               return (
-                <GlassCard 
+                <GlassCard
                   key={connection.id}
                   className="cursor-pointer hover:bg-white/10 transition-all"
                   onClick={() => onUserClick && onUserClick(profile)}

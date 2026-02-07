@@ -12,7 +12,7 @@ const Dashboard = lazy(() => import('../components/dashboard/Dashboard'));
 const ProfileManager = lazy(() => import('../components/profile/ProfileManager'));
 const DirectoryManager = lazy(() => import('../components/directory/DirectoryManager'));
 const ConnectionsManager = lazy(() => import('../components/connections/ConnectionsManager'));
-const RealtimeChat = lazy(() => import('../components/RealtimeChat'));
+const ChatPage = lazy(() => import('../components/chat/ChatPage'));
 const BackendStatus = lazy(() => import('../components/BackendStatus'));
 const APITester = lazy(() => import('../components/APITester'));
 const AuthPage = lazy(() => import('../components/auth/AuthPage'));
@@ -57,7 +57,7 @@ function AppRoutes() {
               <Route path="/groups" element={<GroupsPage />} />
               <Route path="/events" element={<EventsPage />} />
               <Route path="/connections" element={<ConnectionsManager />} />
-              <Route path="/chat" element={<RealtimeChat />} />
+              <Route path="/chat" element={<ChatPage />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/help" element={<Help />} />
               <Route path="/swifin" element={<SwifinComingSoon />} />
