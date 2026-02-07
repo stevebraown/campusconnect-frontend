@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useAuth } from './AuthContext';
 import { chatAPI } from '../services/api';
-import { onConversationMessage, offConversationMessage } from '../services/socket';
+import { onConversationMessage, offConversationMessage, onSocketStatusChange } from '../services/socket';
 
 const ChatContext = createContext(null);
 
@@ -10,6 +10,7 @@ export function ChatProvider({ children }) {
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isChatOpen, setIsChatOpen] = useState(false);
 
   const loadConversations = useCallback(async () => {
     if (!currentUser?.uid) return;
@@ -40,6 +41,26 @@ export function ChatProvider({ children }) {
     onConversationMessage(handleNewMessage);
     return () => offConversationMessage(handleNewMessage);
   }, [currentUser?.uid, loadConversations]);
+
+  // Polling fallback: when socket disconnected and chat is open, poll conversations
+  useEffect(() => {
+    if (!isChatOpen || !currentUser?.uid) return;
+
+    let intervalId;
+    const unsubscribe = onSocketStatusChange((connected) => {
+      if (!connected && !intervalId) {
+        intervalId = setInterval(loadConversations, 15000);
+      } else if (connected && intervalId) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    });
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [isChatOpen, currentUser?.uid, loadConversations]);
 
   const markAsRead = useCallback(async (conversationId) => {
     if (!conversationId) return;
@@ -75,6 +96,8 @@ export function ChatProvider({ children }) {
     markAsRead,
     updateConversation,
     totalUnreadChats,
+    isChatOpen,
+    setIsChatOpen,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

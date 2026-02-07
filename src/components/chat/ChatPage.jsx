@@ -14,7 +14,12 @@ import { Plus, MessageCircle } from '../ui/icons';
 
 function ChatPage() {
   const { currentUser } = useAuth();
-  const { conversations, loading, error, loadConversations, markAsRead, updateConversation } = useChat();
+  const { conversations, loading, error, loadConversations, markAsRead, updateConversation, setIsChatOpen } = useChat();
+
+  useEffect(() => {
+    setIsChatOpen(true);
+    return () => setIsChatOpen(false);
+  }, [setIsChatOpen]);
   const [searchParams] = useSearchParams();
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [showNewChat, setShowNewChat] = useState(false);

@@ -9,8 +9,15 @@ import { io } from 'socket.io-client';
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001';
 
 let socket = null;
+let isConnected = false;
+const connectionListeners = new Set();
 
 const proximityEvent = 'proximity:nearby-suggestion';
+
+const notifyConnectionListeners = (status) => {
+  isConnected = status;
+  connectionListeners.forEach((cb) => cb(isConnected));
+};
 
 /**
  * Initialize socket connection
@@ -37,8 +44,7 @@ export const initializeSocket = (userData) => {
   // Connection events
   socket.on('connect', () => {
     console.log('✅ Socket connected:', socket.id);
-    
-    // Register user if data provided
+    notifyConnectionListeners(true);
     if (userData) {
       socket.emit('user:register', userData);
     }
@@ -46,6 +52,7 @@ export const initializeSocket = (userData) => {
 
   socket.on('disconnect', (reason) => {
     console.log('❌ Socket disconnected:', reason);
+    notifyConnectionListeners(false);
   });
 
   socket.on('connect_error', (error) => {
@@ -94,8 +101,22 @@ export const disconnectSocket = () => {
   if (socket) {
     socket.disconnect();
     socket = null;
+    notifyConnectionListeners(false);
     console.log('Socket disconnected manually');
   }
+};
+
+/**
+ * Listen for socket connection status changes (for polling fallback)
+ * @param {Function} callback - (connected: boolean) => void
+ * @returns {Function} - Unsubscribe function
+ */
+export const onSocketStatusChange = (callback) => {
+  connectionListeners.add(callback);
+  callback(isConnected);
+  return () => {
+    connectionListeners.delete(callback);
+  };
 };
 
 /**
@@ -340,6 +361,7 @@ export default {
   getSocket,
   disconnectSocket,
   isSocketConnected,
+  onSocketStatusChange,
   registerUser,
   sendMessage,
   onNewMessage,
