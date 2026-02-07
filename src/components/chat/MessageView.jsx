@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { chatAPI } from '../../services/api';
 import { safetyAPI } from '../../services/api';
+import chatAssistantAPI from '../../services/chatAssistantAPI';
 import {
   initializeSocket,
   registerUser,
@@ -27,6 +28,9 @@ function MessageView({ conversation, currentUser, onMarkAsRead }) {
   const [inputValue, setInputValue] = useState('');
   const [safetyNotice, setSafetyNotice] = useState(null);
   const [socketConnected, setSocketConnected] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -130,9 +134,55 @@ function MessageView({ conversation, currentUser, onMarkAsRead }) {
     };
   }, [conversation?.id, currentUser?.uid, currentUser?.email, currentUser?.displayName]);
 
+  const handleSuggestionClick = (text) => {
+    setInputValue(text);
+  };
+
+  const handleIcebreakersClick = async () => {
+    if (!conversation?.id) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const res = await chatAssistantAPI.suggestIcebreakers(conversation.id);
+      if (res.success && Array.isArray(res.suggestions)) {
+        setAiSuggestions(res.suggestions);
+      } else {
+        setAiSuggestions([]);
+        setAiError('No suggestions available');
+      }
+    } catch (err) {
+      setAiSuggestions([]);
+      setAiError('Assistant unavailable');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  const handleSuggestReplyClick = async () => {
+    if (!conversation?.id) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const res = await chatAssistantAPI.suggestReplies(conversation.id, 'casual and friendly');
+      if (res.success && Array.isArray(res.suggestions)) {
+        setAiSuggestions(res.suggestions);
+      } else {
+        setAiSuggestions([]);
+        setAiError('No suggestions available');
+      }
+    } catch (err) {
+      setAiSuggestions([]);
+      setAiError('Assistant unavailable');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const handleSend = async (e) => {
     e.preventDefault();
     setSafetyNotice(null);
+    setAiSuggestions([]);
+    setAiError(null);
     const content = inputValue.trim();
     if (!content || !conversation?.id || sending) return;
 
@@ -235,6 +285,46 @@ function MessageView({ conversation, currentUser, onMarkAsRead }) {
             Message blocked by safety checks.
           </div>
         )}
+        {(aiSuggestions.length > 0 || aiLoading || aiError) && (
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            {aiSuggestions.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {aiSuggestions.map((s, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs text-white hover:bg-white/20 transition-colors truncate max-w-[200px]"
+                    onClick={() => handleSuggestionClick(s)}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+            {aiLoading && <span className="text-xs text-white/50">Thinking…</span>}
+            {aiError && <span className="text-xs text-red-200">{aiError}</span>}
+          </div>
+        )}
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          {messages.length <= 3 && (
+            <button
+              type="button"
+              className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10 transition-colors"
+              onClick={handleIcebreakersClick}
+              disabled={aiLoading}
+            >
+              Icebreakers
+            </button>
+          )}
+          <button
+            type="button"
+            className="rounded-lg border border-white/20 bg-white/5 px-3 py-1.5 text-xs text-white/80 hover:bg-white/10 transition-colors"
+            onClick={handleSuggestReplyClick}
+            disabled={aiLoading}
+          >
+            Suggest reply
+          </button>
+        </div>
         <form onSubmit={handleSend} className="flex gap-2">
           <Input
             placeholder="Type a message…"
